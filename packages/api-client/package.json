@@ -1,0 +1,23 @@
+{
+  "name": "@istigaba/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Typed Axios factory shared by all four Istigaba frontends (Bearer JWT, refresh rotation with queued retry, Accept-Language, Idempotency-Key, upload progress, error normalisation).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@istigaba/api-types": "workspace:*",
+    "axios": "catalog:"
+  },
+  "devDependencies": {
+    "axios-mock-adapter": "2.1.0",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
