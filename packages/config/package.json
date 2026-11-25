@@ -1,0 +1,24 @@
+{
+  "name": "@istigaba/config",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Istigaba design tokens (Light/Dark) from docs/design/DESIGN_TOKENS.md and the generated theme files.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens": "./src/tokens.ts",
+    "./css/*": "./css/*",
+    "./tailwind-preset": "./tailwind-preset.cjs"
+  },
+  "scripts": {
+    "build:css": "tsx scripts/build-css.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "^4.20.0",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

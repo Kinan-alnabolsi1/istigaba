@@ -1,0 +1,18 @@
+{
+  "name": "@istigaba/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "description": "All Arabic and English UI strings for the four Istigaba frontends. Apps hold i18n initialisation only.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
