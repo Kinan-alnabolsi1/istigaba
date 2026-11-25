@@ -16,7 +16,9 @@ if (!tool) {
   process.exit(2);
 }
 if (!existsSync(binDir)) {
-  console.error('apps/ai-service/.venv is missing. Run: cd apps/ai-service && py -3.13 -m venv .venv');
+  console.error(
+    'apps/ai-service/.venv is missing. Run: cd apps/ai-service && py -3.13 -m venv .venv',
+  );
   process.exit(2);
 }
 

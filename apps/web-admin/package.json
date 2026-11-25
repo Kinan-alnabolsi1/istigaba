@@ -20,8 +20,8 @@
     "@istigaba/web-ui": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "i18next": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
+    "react": "catalog:web",
+    "react-dom": "catalog:web",
     "react-i18next": "catalog:",
     "react-router": "catalog:web",
     "zustand": "catalog:"

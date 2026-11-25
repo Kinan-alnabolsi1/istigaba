@@ -33,6 +33,10 @@ catalog:
 catalogs:
   # Web (Vite + Tailwind CSS 4)
   web:
+    # Web apps take the latest React 19.2 patch (react-router 8.5 needs >=19.2.7); mobile keeps
+    # Expo SDK 57's bundled 19.2.3 from the default catalog.
+    react: 19.2.9
+    react-dom: 19.2.9
     vite: 8.3.8
     '@vitejs/plugin-react': 6.3.0
     tailwindcss: 4.3.5
@@ -58,3 +62,19 @@ minimumReleaseAgeExclude:
 allowBuilds:
   esbuild: true
   '@scarf/scarf': false # install telemetry only
+
+# Security overrides for transitive dependencies (owner decision 2026-11-26).
+overrides:
+  # GHSA-r5fr-rjxr-66jc, via @stoplight/prism-cli (dev mock server only).
+  lodash: 4.18.1
+  # GHSA-qr28-fpjm-wq7f, via expo-router > query-string (ships in the mobile apps).
+  decode-uri-component: 0.5.1
+  # react-native 0.86.3's CLI plugin peer; auto-installed peers otherwise pick 0.88.x.
+  '@react-native/metro-config': 0.86.3
+
+audit:
+  level: high
+  ignore:
+    # @faker-js/faker 5.x inside @stoplight/prism-cli (local mock server, never shipped). The fix
+    # is faker 10.x, a breaking major for Prism. Revisit when Prism updates its dependency.
+    - GHSA-qxc2-j82w-r537

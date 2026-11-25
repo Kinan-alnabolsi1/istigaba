@@ -1,0 +1,156 @@
+# Istigaba CI (CLAUDE.md §7, docs/plans/S0.md §9). Runs on every push to main.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks 8.30.1 (checksum verified)
+        run: |
+          set -euo pipefail
+          v=8.30.1
+          base="https://github.com/gitleaks/gitleaks/releases/download/v${v}"
+          curl -sSfL -o gitleaks.tar.gz "${base}/gitleaks_${v}_linux_x64.tar.gz"
+          curl -sSfL -o checksums.txt "${base}/gitleaks_${v}_checksums.txt"
+          grep "gitleaks_${v}_linux_x64.tar.gz" checksums.txt | sed 's/gitleaks_.*$/gitleaks.tar.gz/' | sha256sum --check
+          tar -xzf gitleaks.tar.gz gitleaks
+      - name: Scan history
+        run: ./gitleaks git --config .gitleaks.toml --redact --exit-code 1 .
+
+  js:
+    name: JS (lint, typecheck, test, contract, builds)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Lint (ESLint boundaries + Prettier)
+        run: pnpm lint
+      - run: pnpm typecheck
+      - name: Tests (repo scripts, ESLint fixtures, packages, web, mobile)
+        run: pnpm test
+      - name: OpenAPI lint
+        run: pnpm openapi:lint
+      - name: Generated API types are current
+        run: pnpm api-types:check
+      - name: Generated theme files are current
+        run: pnpm tokens:check
+      - name: Traceability (FR/NFR → tests)
+        run: pnpm traceability
+      - name: Build web apps
+        run: |
+          pnpm --filter web-ops build
+          pnpm --filter web-admin build
+        env:
+          VITE_API_BASE_URL: https://api.istigaba.example/api/v1
+      - name: Bundle mobile apps (Android JS bundle; native EAS builds are separate)
+        run: |
+          pnpm --filter mobile-citizen export
+          pnpm --filter mobile-field export
+      - name: Dependency audit
+        run: pnpm audit --audit-level high
+
+  api:
+    name: API (Pint, Larastan, Pest, schema drift)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:18-3.7
+        env:
+          POSTGRES_USER: istigaba
+          POSTGRES_PASSWORD: istigaba
+          POSTGRES_DB: istigaba_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U istigaba -d istigaba_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USERNAME: istigaba
+      DB_PASSWORD: istigaba
+      DB_TEST_DATABASE: istigaba_test
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v5
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, pgsql, intl, sodium, gd, exif, mbstring, fileinfo
+          coverage: none
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+      - name: Pint
+        run: composer lint -- --test
+      - name: Larastan (level 6)
+        run: composer analyse
+      - name: Pest (Architecture, Unit, Feature, Database, Contract, Privacy)
+        run: composer test
+      - name: Migrate test database from scratch
+        run: php artisan migrate:fresh --drop-types --force --no-interaction
+        env:
+          APP_ENV: testing
+          DB_DATABASE: istigaba_test
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Schema drift (database vs docs/erd_v1.1.dbml)
+        working-directory: .
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm schema:drift
+      - name: Dependency audit
+        run: composer audit
+
+  ai:
+    name: AI service (ruff, mypy, pytest, OpenAPI snapshot)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/ai-service
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: apps/ai-service/.python-version
+      - name: Install locked dev dependencies
+        run: |
+          python -m pip install --quiet pip-tools==7.7.0
+          pip-sync requirements-dev.lock
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy
+      - run: pytest
+      - name: OpenAPI snapshot is current
+        run: |
+          python -m app.export_openapi
+          git diff --exit-code -- ../../docs/ai-service/openapi.json
+      - name: Dependency audit
+        run: pip-audit -r requirements.lock

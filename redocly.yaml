@@ -1,0 +1,10 @@
+# OpenAPI lint for docs/api/openapi.yaml (CI fails on errors only; warnings are reported).
+extends:
+  - recommended
+
+rules:
+  # Private repository with no licence file (CLAUDE.md §8).
+  info-license: off
+  # Known example/schema mismatches in the frozen v1.0 contract are tracked in docs/progress.md
+  # (open decisions); keep them visible as warnings until the owner approves a contract fix.
+  no-invalid-media-type-examples: warn

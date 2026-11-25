@@ -1,0 +1,14 @@
+# Secret scan (CLAUDE.md §7: secret scan in CI). Default rules plus a narrow allowlist.
+title = "istigaba gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Committed examples and generated lockfiles contain no secrets"
+paths = [
+  '''(^|/)\.env\.example$''',
+  '''(^|/)pnpm-lock\.yaml$''',
+  '''(^|/)composer\.lock$''',
+  '''(^|/)requirements(-dev)?\.lock$''',
+]

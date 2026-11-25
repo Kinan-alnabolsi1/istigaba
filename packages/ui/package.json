@@ -24,6 +24,9 @@
     "nativewind": "catalog:mobile",
     "react": "catalog:",
     "react-native": "catalog:mobile",
+    "react-native-css-interop": "catalog:mobile",
+    "react-native-reanimated": "4.5.1",
+    "tailwindcss": "catalog:mobile",
     "typescript": "catalog:"
   }
 }

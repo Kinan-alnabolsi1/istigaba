@@ -13,12 +13,23 @@ const require = createRequire(import.meta.url);
  */
 
 /** Framework tables allowed outside the DBML (owner decision B2). */
-export const ALLOWED_EXTRA_TABLES = ['migrations', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs'];
+export const ALLOWED_EXTRA_TABLES = [
+  'migrations',
+  'cache',
+  'cache_locks',
+  'jobs',
+  'job_batches',
+  'failed_jobs',
+];
 
 /** Physical-schema objects the DBML cannot express but the ERD explanation requires. */
 export const EXPECTED_PARTIAL_INDEXES = {
   assignments: [
-    { columns: ['report_id'], unique: true, predicate: "(mission_status <> 'cancelled'::mission_status)" },
+    {
+      columns: ['report_id'],
+      unique: true,
+      predicate: "(mission_status <> 'cancelled'::mission_status)",
+    },
   ],
 };
 
@@ -68,12 +79,21 @@ export function schemaFromDbml(text) {
 
   for (const t of s.tables) {
     /** @type {Table} */
-    const table = { columns: {}, primaryKey: [], uniques: [], indexes: [], partialIndexes: [], foreignKeys: [] };
+    const table = {
+      columns: {},
+      primaryKey: [],
+      uniques: [],
+      indexes: [],
+      partialIndexes: [],
+      foreignKeys: [],
+    };
     for (const f of t.fields) {
       const def = f.increment
         ? '@increment'
         : f.dbdefault
-          ? normalizeDefault(f.dbdefault.type === 'string' ? `'${f.dbdefault.value}'` : f.dbdefault.value)
+          ? normalizeDefault(
+              f.dbdefault.type === 'string' ? `'${f.dbdefault.value}'` : f.dbdefault.value,
+            )
           : null;
       table.columns[f.name] = {
         type: normalizeDbmlType(f.type.type_name),
@@ -143,7 +163,8 @@ export function compareSchemas(expected, actual, options = {}) {
   }
 
   for (const name of Object.keys(actual.tables)) {
-    if (!expected.tables[name] && !allowed.has(name)) out.push(`table ${name}: unexpected (not in DBML)`);
+    if (!expected.tables[name] && !allowed.has(name))
+      out.push(`table ${name}: unexpected (not in DBML)`);
   }
 
   for (const [name, exp] of Object.entries(expected.tables)) {
@@ -160,17 +181,27 @@ export function compareSchemas(expected, actual, options = {}) {
       }
       if (ec.type !== ac.type) out.push(`${name}.${col}: type expected ${ec.type} got ${ac.type}`);
       if (ec.nullable !== ac.nullable)
-        out.push(`${name}.${col}: expected ${ec.nullable ? 'NULL' : 'NOT NULL'} got ${ac.nullable ? 'NULL' : 'NOT NULL'}`);
-      if (ec.default !== ac.default) out.push(`${name}.${col}: default expected ${ec.default} got ${ac.default}`);
+        out.push(
+          `${name}.${col}: expected ${ec.nullable ? 'NULL' : 'NOT NULL'} got ${ac.nullable ? 'NULL' : 'NOT NULL'}`,
+        );
+      if (ec.default !== ac.default)
+        out.push(`${name}.${col}: default expected ${ec.default} got ${ac.default}`);
     }
     for (const col of Object.keys(act.columns)) {
       if (!exp.columns[col]) out.push(`${name}.${col}: unexpected column`);
     }
     if (key(exp.primaryKey) !== key(act.primaryKey))
-      out.push(`${name}: primary key expected (${key(exp.primaryKey)}) got (${key(act.primaryKey)})`);
+      out.push(
+        `${name}: primary key expected (${key(exp.primaryKey)}) got (${key(act.primaryKey)})`,
+      );
     diffSets(`${name} unique`, sortedKeys(exp.uniques), sortedKeys(act.uniques), out);
     diffSets(`${name} index`, sortedKeys(exp.indexes), sortedKeys(act.indexes), out);
-    diffSets(`${name} partial index`, exp.partialIndexes.map(idxKey), act.partialIndexes.map(idxKey), out);
+    diffSets(
+      `${name} partial index`,
+      exp.partialIndexes.map(idxKey),
+      act.partialIndexes.map(idxKey),
+      out,
+    );
     diffSets(`${name} foreign key`, exp.foreignKeys.map(fkKey), act.foreignKeys.map(fkKey), out);
   }
   return out;
@@ -198,7 +229,14 @@ export async function schemaFromDatabase(client) {
 
   for (const t of tables) {
     /** @type {Table} */
-    const table = { columns: {}, primaryKey: [], uniques: [], indexes: [], partialIndexes: [], foreignKeys: [] };
+    const table = {
+      columns: {},
+      primaryKey: [],
+      uniques: [],
+      indexes: [],
+      partialIndexes: [],
+      foreignKeys: [],
+    };
     for (const c of await q(`
         SELECT a.attname AS name, format_type(a.atttypid, a.atttypmod) AS type, NOT a.attnotnull AS nullable,
                pg_get_expr(ad.adbin, ad.adrelid) AS def, a.attidentity AS identity
@@ -215,7 +253,8 @@ export async function schemaFromDatabase(client) {
                array(SELECT a.attname FROM unnest(i.indkey) WITH ORDINALITY k(attnum, ord)
                        JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = k.attnum ORDER BY k.ord)::text[] AS cols
           FROM pg_index i WHERE i.indrelid = ${t.oid}`)) {
-      if (i.predicate) table.partialIndexes.push({ columns: i.cols, unique: i.uq, predicate: i.predicate });
+      if (i.predicate)
+        table.partialIndexes.push({ columns: i.cols, unique: i.uq, predicate: i.predicate });
       else if (i.pk) table.primaryKey = i.cols;
       else if (i.uq) table.uniques.push(i.cols);
       else table.indexes.push(i.cols);
