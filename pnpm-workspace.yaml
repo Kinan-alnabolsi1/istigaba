@@ -42,6 +42,7 @@ catalogs:
   # Mobile (Expo SDK 57 + NativeWind v4 + Tailwind CSS 3), decision B4
   mobile:
     nativewind: 4.2.7
+    react-native-css-interop: 0.2.7
     tailwindcss: 3.4.19
     react-native: 0.86.3
 minimumReleaseAgeExclude:

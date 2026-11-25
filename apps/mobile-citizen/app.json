@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "استجابة",
+    "slug": "istigaba-citizen",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "istigaba-citizen",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "android": {
+      "package": "example.istigaba.citizen",
+      "adaptiveIcon": {
+        "backgroundColor": "#0F2A47",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "example.istigaba.citizen",
+      "supportsTablet": false
+    },
+    "extra": {
+      "supportsRTL": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-localization",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0F2A47",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 76
+        }
+      ]
+    ],
+    "experiments": { "typedRoutes": true }
+  }
+}
