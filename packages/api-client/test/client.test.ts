@@ -140,14 +140,12 @@ describe('S0 api-client error normalisation', () => {
 
   it('S0 keeps field errors on 422', async () => {
     const { client, mock } = setup();
-    mock
-      .onPost('/x')
-      .reply(422, {
-        code: 'validation_failed',
-        message: 'm',
-        request_id: 'r',
-        errors: { email: ['bad'] },
-      });
+    mock.onPost('/x').reply(422, {
+      code: 'validation_failed',
+      message: 'm',
+      request_id: 'r',
+      errors: { email: ['bad'] },
+    });
     await expect(client.http.post('/x', {})).rejects.toMatchObject({
       status: 422,
       errors: { email: ['bad'] },

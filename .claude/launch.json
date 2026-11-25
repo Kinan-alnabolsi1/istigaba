@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web-ops",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:web-ops"],
+      "port": 5173,
+      "url": "http://localhost:5173"
+    },
+    {
+      "name": "web-admin",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:web-admin"],
+      "port": 5174,
+      "url": "http://localhost:5174"
+    }
+  ]
+}

@@ -6,6 +6,7 @@ export const en = {
     appName: 'Istigaba',
     loading: 'Loading…',
     retry: 'Try again',
+    foundationReady: 'Foundation shell ready. Screens arrive in the next slices.',
   },
   apps: {
     ops: 'Operations Room',

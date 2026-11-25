@@ -51,6 +51,7 @@ minimumReleaseAgeExclude:
   - eslint-plugin-boundaries@7.4.5
   - vitest@5.1.2
   - '@types/node@26.6.10'
+  - i18next@27.2.9
 
 # Dependency install scripts: explicit allow/deny (pnpm strictDepBuilds).
 allowBuilds:

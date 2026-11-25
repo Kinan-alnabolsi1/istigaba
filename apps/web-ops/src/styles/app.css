@@ -1,0 +1,19 @@
+@import 'tailwindcss';
+@import '@istigaba/config/css/theme.web.css';
+
+/* Dark mode follows the .dark class set by the inline head script and the theme store. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Scan shared components for utility classes. */
+@source '../../../../packages/web-ui/src';
+
+@layer base {
+  html {
+    font-family: var(--font-active);
+    line-height: var(--leading-body);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+}
