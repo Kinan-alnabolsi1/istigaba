@@ -1,0 +1,56 @@
+packages:
+  - apps/web-ops
+  - apps/web-admin
+  - apps/mobile-citizen
+  - apps/mobile-field
+  - packages/*
+
+# pnpm >= 11 reads non-auth settings from this file only (not from .npmrc).
+autoInstallPeers: true
+strictPeerDependencies: false
+
+# Shared versions (docs/plans/S0.md §2.2). Exact patches live in pnpm-lock.yaml.
+catalog:
+  react: 19.2.3
+  react-dom: 19.2.3
+  '@types/react': ~19.2.0
+  '@types/react-dom': ~19.2.0
+  typescript: 5.9.3
+  axios: 1.21.1
+  '@tanstack/react-query': 5.108.4
+  zustand: 5.1.0
+  react-hook-form: 7.92.0
+  zod: 4.6.7
+  i18next: 27.2.9
+  react-i18next: 18.0.3
+  vitest: 5.1.2
+  '@testing-library/react': ^16.3.0
+  '@testing-library/jest-dom': ^6.9.0
+  '@testing-library/user-event': ^14.6.0
+  jsdom: ^27.0.0
+
+catalogs:
+  # Web (Vite + Tailwind CSS 4)
+  web:
+    vite: 8.3.8
+    '@vitejs/plugin-react': 6.3.0
+    tailwindcss: 4.3.5
+    '@tailwindcss/vite': 4.3.5
+    react-router: 8.5.3
+    recharts: 3.11.1
+  # Mobile (Expo SDK 57 + NativeWind v4 + Tailwind CSS 3), decision B4
+  mobile:
+    nativewind: 4.2.7
+    tailwindcss: 3.4.19
+    react-native: 0.86.3
+minimumReleaseAgeExclude:
+  - '@boundaries/policies@1.1.0'
+  - '@vitest/mocker@5.1.2'
+  - '@vitest/spy@5.1.2'
+  - eslint-plugin-boundaries@7.4.5
+  - vitest@5.1.2
+
+# Dependency install scripts: explicit allow/deny (pnpm strictDepBuilds).
+allowBuilds:
+  esbuild: true
+  '@scarf/scarf': false # install telemetry only

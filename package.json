@@ -1,0 +1,50 @@
+{
+  "name": "istigaba",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.23.0",
+  "engines": {
+    "node": ">=26.13.0 <27",
+    "pnpm": ">=12.23.0 <13"
+  },
+  "scripts": {
+    "dev:web-ops": "pnpm --filter web-ops dev",
+    "dev:web-admin": "pnpm --filter web-admin dev",
+    "dev:api": "cd apps/api && php artisan serve --host=127.0.0.1 --port=8000",
+    "dev:ai": "node scripts/ai.mjs uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload",
+    "mock:api": "prism mock docs/api/openapi.yaml --host 127.0.0.1 --port 4010 --errors",
+    "test": "vitest run --root . --config vitest.config.ts && pnpm -r --if-present test",
+    "test:api": "composer --working-dir=apps/api test",
+    "test:ai": "node scripts/ai.mjs pytest",
+    "test:all": "pnpm test && pnpm test:api && pnpm test:ai",
+    "lint": "eslint . && prettier --check .",
+    "lint:fix": "eslint . --fix && prettier --write .",
+    "lint:api": "composer --working-dir=apps/api lint -- --test && composer --working-dir=apps/api analyse",
+    "lint:ai": "node scripts/ai.mjs ruff check . && node scripts/ai.mjs ruff format --check . && node scripts/ai.mjs mypy .",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "openapi:lint": "redocly lint docs/api/openapi.yaml",
+    "api-types:generate": "pnpm --filter @istigaba/api-types generate",
+    "api-types:check": "pnpm api-types:generate && git diff --exit-code -- packages/api-types/src",
+    "tokens:build": "pnpm --filter @istigaba/config build:css",
+    "tokens:check": "pnpm tokens:build && git diff --exit-code -- packages/config/css",
+    "db:setup": "bash scripts/db/setup-local.sh",
+    "schema:drift": "node scripts/schema-drift/check.mjs",
+    "traceability": "node scripts/traceability/check.mjs",
+    "doctor": "bash scripts/doctor.sh"
+  },
+  "devDependencies": {
+    "@dbml/core": "13.0.0",
+    "@eslint/js": "10.0.1",
+    "@redocly/cli": "2.83.0",
+    "@stoplight/prism-cli": "5.16.0",
+    "eslint": "10.15.0",
+    "eslint-plugin-boundaries": "7.4.5",
+    "openapi-typescript": "7.13.0",
+    "pg": "8.23.1",
+    "prettier": "3.10.1",
+    "tsx": "^4.20.0",
+    "typescript": "catalog:",
+    "typescript-eslint": "8.74.0",
+    "vitest": "catalog:"
+  }
+}

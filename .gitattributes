@@ -1,0 +1,33 @@
+# LF everywhere (CLAUDE.md §2). Windows-only scripts keep CRLF.
+* text=auto eol=lf
+
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# Binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.pdf   binary
+*.ttf   binary
+*.otf   binary
+*.woff  binary
+*.woff2 binary
+*.mp4   binary
+*.m4a   binary
+*.mp3   binary
+*.wav   binary
+*.zip   binary
+*.jar   binary
+
+# Generated, committed files: hide from diffs
+packages/api-types/src/openapi.d.ts linguist-generated=true -diff
+packages/config/css/*.css           linguist-generated=true
+docs/ai-service/openapi.json        linguist-generated=true
+pnpm-lock.yaml                      linguist-generated=true -diff
+apps/api/composer.lock              linguist-generated=true -diff
+apps/ai-service/requirements*.lock  linguist-generated=true -diff

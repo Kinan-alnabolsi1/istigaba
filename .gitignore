@@ -1,0 +1,76 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output / caches
+dist/
+build/
+coverage/
+.vite/
+.expo/
+.expo-shared/
+.turbo/
+.eslintcache
+*.tsbuildinfo
+web-build/
+android/
+ios/
+
+# Env files (examples are committed)
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Laravel (apps/api)
+apps/api/vendor/
+apps/api/storage/*.key
+apps/api/storage/logs/*
+!apps/api/storage/logs/.gitignore
+apps/api/storage/framework/cache/data/*
+apps/api/storage/framework/sessions/*
+apps/api/storage/framework/testing/*
+apps/api/storage/framework/views/*
+apps/api/storage/pail/
+apps/api/bootstrap/cache/*.php
+apps/api/public/storage
+apps/api/public/hot
+apps/api/.phpunit.cache/
+.phpunit.result.cache
+
+# Python (apps/ai-service)
+.venv/
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Audio, model weights (H2, CLAUDE.md §8)
+*.m4a
+*.mp3
+*.wav
+*.ogg
+*.webm
+*.bin
+*.pt
+*.safetensors
+*.onnx
+*.ckpt
+apps/ai-service/models/weights/
+
+# Secrets
+*.pem
+*.key
+!apps/api/storage/*.key.example
+
+# OS / editors
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log
+npm-debug.log*
+pnpm-debug.log*

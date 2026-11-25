@@ -1,0 +1,13 @@
+# Not JS/TS: formatted by their own tools or frozen
+apps/api/
+apps/ai-service/
+docs/
+*.md
+pnpm-lock.yaml
+
+# Generated
+packages/api-types/src/openapi.d.ts
+packages/config/css/
+**/dist/
+**/coverage/
+**/.expo/
