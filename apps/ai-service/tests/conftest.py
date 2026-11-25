@@ -1,3 +1,4 @@
+import secrets
 from collections.abc import Iterator
 
 import pytest
@@ -8,7 +9,8 @@ from app.api.deps import protected_router
 from app.core.config import Settings, get_settings
 from app.main import create_app
 
-TEST_KEY = "test-internal-key-0123456789"
+# Generated per test run: no secret-looking literal in the repository (gitleaks).
+TEST_KEY = secrets.token_urlsafe(24)
 
 
 def _probe_router() -> APIRouter:

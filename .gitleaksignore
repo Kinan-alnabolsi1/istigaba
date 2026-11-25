@@ -1,0 +1,5 @@
+# Reviewed gitleaks findings that are not secrets. One fingerprint per line, exact match only.
+#
+# Dummy X-Internal-Key used by the ai-service tests in commit 44ac2eb (S0). Not a credential; the
+# test now generates a random key at runtime (apps/ai-service/tests/conftest.py).
+44ac2ebe10da16066c2a7cfb999d719b0fdd40a8:apps/ai-service/tests/conftest.py:generic-api-key:11
