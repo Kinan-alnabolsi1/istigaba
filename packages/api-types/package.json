@@ -1,0 +1,18 @@
+{
+  "name": "@istigaba/api-types",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TypeScript types generated from docs/api/openapi.yaml (v1.0). Never edit src/openapi.d.ts by hand.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate": "openapi-typescript ../../docs/api/openapi.yaml -o src/openapi.d.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.13.0",
+    "typescript": "catalog:"
+  }
+}
