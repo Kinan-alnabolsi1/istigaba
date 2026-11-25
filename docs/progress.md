@@ -2,7 +2,7 @@
 
 ## Current slice
 
-**S0 Foundation**: implemented and verified locally (2026-11-26). Remaining DoD items are push + CI green on GitHub, and a reset of the local dev database (see Blockers).
+**S0 Foundation**: complete. Verified locally and green in GitHub Actions (2026-11-26). Only open item: the local dev database reset (see Blockers).
 
 ## Done (S0)
 
@@ -18,7 +18,6 @@
 
 ## Next
 
-- Push to `main` and confirm all CI jobs are green on GitHub.
 - S1 Identity: write `docs/plans/S1.md` (FR-001..004) for approval.
 
 ## Blockers
@@ -69,4 +68,6 @@
 | 2026-11-26 | `expo export --platform android` (both apps) | Exported (Hermes bundle ~4.1 MB); native EAS builds not part of S0 |
 | 2026-11-26 | Audits | composer: none; pip-audit: none; pnpm: 0 high after overrides (1 dev-only high ignored, 2 moderate) |
 | 2026-11-26 | Prism `pnpm mock:api` | Serves at root (no `/api/v1`); bearer-protected examples returned |
-| — | GitHub Actions CI | **Not yet run**: waiting for the push |
+| 2026-11-26 | GitHub Actions run 45719398255 (`c8cff40`) | JS, API (incl. schema drift on `postgis/postgis:18-3.7`) and AI green; secret scan flagged the dummy ai-service test key |
+| 2026-11-26 | gitleaks 8.30.1 locally (checksum-verified) | Finding located and reviewed: test key in `apps/ai-service/tests/conftest.py` (not a secret). Tests now generate the key at runtime; historical fingerprint in `.gitleaksignore`. History and tree: no leaks |
+| 2026-11-26 | GitHub Actions run 45720158785 (`b7442ed`) | **All 4 jobs green** (Secret scan, JS, API, AI): https://github.com/Kinan-alnabolsi1/istigaba/actions/runs/45720158785 |
