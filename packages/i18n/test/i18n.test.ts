@@ -56,4 +56,18 @@ describe('NFR-022 i18n resources', () => {
     expect(isKnownErrorCode('network_error')).toBe(true);
     expect(isKnownErrorCode('toString')).toBe(false);
   });
+
+  it('NFR-006 FR-001 FR-002 every S1 identity error code has a localized message', () => {
+    const s1Codes = [
+      'invalid_credentials',
+      'account_locked',
+      'account_deactivated',
+      'email_taken',
+      'phone_taken',
+      'invalid_current_password',
+      'location_consent_required',
+      'wrong_app_role',
+    ];
+    for (const code of s1Codes) expect(isKnownErrorCode(code)).toBe(true);
+  });
 });

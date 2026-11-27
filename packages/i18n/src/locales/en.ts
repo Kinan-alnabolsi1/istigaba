@@ -38,5 +38,13 @@ export const en = {
       'The assistant is unavailable right now. You can submit a manual report.',
     network_error: 'No network connection.',
     unknown_error: 'Something went wrong. Please try again.',
+    invalid_credentials: 'The email or password is incorrect.',
+    account_locked: 'Too many failed sign-in attempts. Please try again later.',
+    account_deactivated: 'This account is deactivated. Please contact the system administrator.',
+    email_taken: 'This email is already registered.',
+    phone_taken: 'This phone number is already registered.',
+    invalid_current_password: 'The current password is incorrect.',
+    location_consent_required: 'Please allow location sharing first.',
+    wrong_app_role: 'This account cannot be used in this application.',
   },
 } as const satisfies LocaleShape;

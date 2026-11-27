@@ -35,5 +35,13 @@ export const ar = {
     ai_component_unavailable: 'المساعد الذكي غير متاح حالياً. يمكنك تقديم بلاغ يدوي.',
     network_error: 'لا يوجد اتصال بالشبكة.',
     unknown_error: 'حدث خطأ. يرجى المحاولة مجدداً.',
+    invalid_credentials: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+    account_locked: 'محاولات دخول فاشلة كثيرة. يرجى المحاولة لاحقاً.',
+    account_deactivated: 'هذا الحساب معطّل. يرجى التواصل مع مدير النظام.',
+    email_taken: 'هذا البريد الإلكتروني مسجّل مسبقاً.',
+    phone_taken: 'رقم الهاتف هذا مسجّل مسبقاً.',
+    invalid_current_password: 'كلمة المرور الحالية غير صحيحة.',
+    location_consent_required: 'يجب السماح بمشاركة الموقع أولاً.',
+    wrong_app_role: 'لا يمكن استخدام هذا الحساب في هذه الواجهة.',
   },
 } as const;
