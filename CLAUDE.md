@@ -31,8 +31,9 @@ apps/mobile-citizen   Expo app for citizens                         → apps/mob
 apps/mobile-field     Expo app for field unit representatives       → apps/mobile-field/CLAUDE.md
 packages/api-types    openapi-typescript output (committed)
 packages/api-client   Typed Axios factory (all 4 frontends)
+packages/mobile-auth  Token/session flow shared by both mobile apps (Track B)
 packages/i18n  config (design tokens)  ui (mobile, NativeWind)  web-ui (web)
-docs/                 srs, erd, api, plans, progress
+docs/                 srs, erd, api, plans, progress (progress.md = Track A, progress-mobile.md = Track B)
 ```
 - Tooling: pnpm workspaces (JS), Composer (PHP), Python venv + `pyproject.toml` + pip-tools lock. Root scripts: `pnpm dev:web-ops`, `pnpm dev:web-admin`, `pnpm test`, `pnpm lint`, `pnpm typecheck`.
 - Python for `ai-service` is pinned to 3.13. Node Active LTS and pnpm are pinned at the start of S0; `laravel-eloquent-spatial` is verified against PostgreSQL 18 + PostGIS 3.7 in S0. Expo stays on SDK 57.
@@ -120,7 +121,10 @@ CI additionally runs: secret scan, dependency audit, traceability script, AI Ope
 ## 8. Git rules
 - Direct commits to `main` (no feature branches or PRs required); GitHub Actions runs CI on every push. Private repo, no licence file.
 - Conventional Commits with mandatory FR/NFR IDs: `type(scope): summary [FR-xxx,NFR-yyy]`. English only.
-- Pre-push checklist = Definition of done above. Never commit `.env`, model weights, audio, or generated caches.
+- Stage explicit paths only (`git add <paths>`); never `git add -A` or `git add .`. Commit only your own track's files (§12).
+- Pre-push checklist = Definition of done above (no pre-push hook; CI is the backstop). `main` must stay green: if CI is red, whoever broke it fixes it before any new work.
+- Changes to shared packages, `openapi.yaml` or CI go in their own commit with a clear message, and the other developer is told.
+- Never commit `.env`, `CLAUDE.local.md`, model weights, audio, or generated caches.
 - Commit trailer (from the harness) is appended automatically; do not remove it.
 
 ## 9. Shared frontend rules (all four frontend apps)
@@ -144,20 +148,22 @@ Rate-limit table: `apps/api/CLAUDE.md` §Rate limits. Seed data: `docs/seed-prop
 
 Laravel JSON daily logs with `request_id` (also returned in error bodies); central redaction; no Sentry; `GET /health` returns status only; Telescope in local only.
 
-## 12. Parallel work on main (shared-repo sync rules)
+## 12. Developer tracks & parallel work on main
 
 Two developers commit directly to `main` in parallel:
-- **Track A:** `apps/api`, `apps/ai-service`, `apps/web-ops`, `apps/web-admin`, `packages/web-ui`
-- **Track B:** `apps/mobile-citizen`, `apps/mobile-field`, `packages/ui`, `packages/mobile-auth`
+- **Track A (Project Lead, full repo authority):** `apps/api`, `apps/ai-service`, `apps/web-ops`, `apps/web-admin`, `packages/web-ui`, shared packages (`api-types`, `api-client`, `config`), tooling, CI, `docs/`.
+- **Track B (mobile):** `apps/mobile-citizen`, `apps/mobile-field`, `packages/ui`, `packages/mobile-auth`.
 
-Check `CLAUDE.local.md` for which track this machine owns. If `CLAUDE.local.md` is missing, ask the developer which track they are working on before editing files.
+Check `CLAUDE.local.md` for which track this machine owns. If it is missing, ask the developer which track they are working on before editing files.
 
 Follow these rules in every session:
-1. **Sync before pushing:** Always run `git pull --rebase origin main` before any `git push origin main` (and at the start of a session). Never run `git push --force` or `--force-with-lease` on `main`.
-2. **Stay strictly within your track:** Never edit, reformat, or revert files belonging to the other track.
-3. **High-conflict shared files (`pnpm-lock.yaml`, `packages/i18n/*`, `eslint.config.js`, `docs/progress.md`):**
-   - `pnpm-lock.yaml`: never hand-edit or manually resolve conflicts; if a rebase conflicts, take one side and regenerate with `pnpm install`.
-   - `packages/i18n/*`: only append new keys under your feature namespace; never reorder or reformat existing keys.
-   - `docs/progress.md`: append new entries only; do not rewrite earlier sections.
+1. **Sync before pushing:** run `git pull --rebase origin main` at the start of a session and before every `git push origin main`. Never run `git push --force` or `--force-with-lease` on `main`.
+2. **Stay within your track:** Track B never edits Track A files. Track A leaves Track B files untouched unless explicitly asked to inspect or edit them. Never reformat or revert the other track's files.
+3. **Shared files:**
+   - `packages/api-types`, `packages/api-client`, `packages/config`, `docs/api/openapi.yaml`, CI workflows and `eslint.config.js` are Track A only. Track B requests changes from Track A. `openapi.yaml` changes still need explicit approval and `packages/api-types` regeneration in the same commit.
+   - `packages/i18n/*`: Track A owns it. Track B may only add new keys in its own (mobile) namespaces; never edit, rename, reorder or reformat existing keys.
+   - `pnpm-lock.yaml`: never hand-edit or hand-resolve; on a rebase conflict take one side and regenerate with `pnpm install`.
+   - Progress: `docs/progress.md` is Track A and project-wide; `docs/progress-mobile.md` is Track B. Each session updates only its own file, append-only. This replaces the `docs/progress.md` update in §6 step 5 and §7 for Track B.
    - Plans: keep parallel slice plans in separate files (e.g. `docs/plans/S1.md` vs `docs/plans/S1-mobile.md`).
-4. **Re-verify after rebase:** If `git pull --rebase` brings in changes to any `packages/*`, `pnpm-lock.yaml`, or `eslint.config.js`, re-run the relevant local checks (`typecheck`, `lint`, tests) before pushing.
+4. **Re-verify after rebase:** if `git pull --rebase` brings in changes to any `packages/*`, `pnpm-lock.yaml` or `eslint.config.js`, re-run the relevant local checks (`typecheck`, `lint`, tests) before pushing.
+5. **Cross-track impact:** a Track A change to the contract or a shared package that affects the mobile apps goes in its own commit, and Track B is told.
