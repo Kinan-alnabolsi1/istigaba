@@ -1,5 +1,7 @@
 <?php
 
+use App\Modules\Identity\Models\User;
+
 return [
 
     /*
@@ -14,7 +16,8 @@ return [
     */
 
     'defaults' => [
-        'guard' => env('AUTH_GUARD', 'web'),
+        // Stateless JWT for the whole API (NFR-006). The session guard is unused.
+        'guard' => env('AUTH_GUARD', 'api'),
         'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
     ],
 
@@ -40,6 +43,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'api' => [
+            'driver' => 'jwt',
+            'provider' => 'users',
+        ],
     ],
 
     /*
@@ -60,16 +67,10 @@ return [
     */
 
     'providers' => [
-        // S0: no user model exists yet. S1 (Identity) replaces this with the Identity User model + JWT guard.
         'users' => [
-            'driver' => 'database',
-            'table' => 'users',
+            'driver' => 'eloquent',
+            'model' => User::class,
         ],
-
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
     ],
 
     /*

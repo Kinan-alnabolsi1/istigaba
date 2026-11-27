@@ -35,6 +35,12 @@
         <env name="APP_FALLBACK_LOCALE" value="ar"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
+        <!-- Argon2id stays the algorithm in tests; only its cost is lowered (config/hashing.php). -->
+        <env name="ARGON_MEMORY" value="1024"/>
+        <env name="ARGON_TIME" value="1"/>
+        <env name="ARGON_THREADS" value="1"/>
+        <!-- The JWT secret is generated per process in tests/TestCase.php (never committed). -->
+        <env name="JWT_SECRET" value="" force="true"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
         <!-- PostgreSQL + PostGIS test database (pnpm db:setup). TestCase refuses names not ending in _test. -->

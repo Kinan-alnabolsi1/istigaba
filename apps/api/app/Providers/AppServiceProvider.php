@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Support\RateLimiting\RateLimits;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Telescope\TelescopeServiceProvider as TelescopePackageProvider;
@@ -26,5 +28,10 @@ class AppServiceProvider extends ServiceProvider
         // DBML `timestamptz` means PostgreSQL's default (microsecond) precision. Laravel defaults to
         // timestamp(0), which truncates to seconds and fails the schema-drift check.
         Schema::defaultTimePrecision(null);
+
+        // Contract: single resources are returned unwrapped; lists wrap themselves in {data, meta}.
+        JsonResource::withoutWrapping();
+
+        RateLimits::register();
     }
 }

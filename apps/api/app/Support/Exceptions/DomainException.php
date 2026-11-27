@@ -26,4 +26,14 @@ abstract class DomainException extends RuntimeException
     {
         return [];
     }
+
+    /**
+     * Field errors for a 422 domain error (e.g. `invalid_current_password`), or null.
+     *
+     * @return array<string, array<int, string>>|null
+     */
+    public function errors(): ?array
+    {
+        return null;
+    }
 }

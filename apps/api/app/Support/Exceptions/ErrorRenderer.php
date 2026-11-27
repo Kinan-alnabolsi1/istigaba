@@ -10,6 +10,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -71,9 +72,9 @@ final class ErrorRenderer
     private static function classify(Throwable $e): array
     {
         return match (true) {
-            $e instanceof DomainException => [$e->status(), $e->errorCode(), $e->headers(), null],
+            $e instanceof DomainException => [$e->status(), $e->errorCode(), $e->headers(), $e->errors()],
             $e instanceof ValidationException => [422, 'validation_failed', [], $e->errors()],
-            $e instanceof AuthenticationException => [401, 'unauthenticated', [], null],
+            $e instanceof AuthenticationException, $e instanceof JWTException => [401, 'unauthenticated', [], null],
             $e instanceof AuthorizationException, $e instanceof AccessDeniedHttpException => [403, 'forbidden', [], null],
             // A wrong method is reported as not_found: the contract defines no 405 code.
             $e instanceof ModelNotFoundException,

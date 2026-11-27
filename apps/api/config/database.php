@@ -97,6 +97,9 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // The app runs in UTC and Laravel writes timestamps without an offset, so the session
+            // must be UTC too; otherwise timestamptz values shift by the server's local offset.
+            'timezone' => 'UTC',
         ],
 
         'sqlsrv' => [

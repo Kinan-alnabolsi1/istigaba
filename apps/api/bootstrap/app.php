@@ -22,6 +22,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Global, outermost first: every response gets a request id, security headers and a locale.
         $middleware->prepend([RequestIdMiddleware::class, SecurityHeaders::class, SetLocaleFromAcceptLanguage::class]);
+        // Passwords are never trimmed (the framework already skips `password`/`current_password`).
+        $middleware->trimStrings(except: ['new_password']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         ErrorRenderer::register($exceptions);

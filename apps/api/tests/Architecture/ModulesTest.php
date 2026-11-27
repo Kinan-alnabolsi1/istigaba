@@ -83,9 +83,10 @@ foreach (S0_MODULES as $module) {
         ->group('NFR-021');
 }
 
-arch('NFR-021 the DB facade is used only in Actions, Queries and Support')
+// Seeders and factories are data scripts outside the application (S1: IdentitySeeder, UserFactory).
+arch('NFR-021 the DB facade is used only in Actions, Queries, Support, seeders and factories')
     ->expect('Illuminate\Support\Facades\DB')
-    ->toOnlyBeUsedIn([...s0AllOf('Actions'), ...s0AllOf('Queries'), 'App\Support'])
+    ->toOnlyBeUsedIn([...s0AllOf('Actions'), ...s0AllOf('Queries'), 'App\Support', 'Database\Seeders', 'Database\Factories'])
     ->group('NFR-021');
 
 arch('NFR-021 no debug helpers in application code')
