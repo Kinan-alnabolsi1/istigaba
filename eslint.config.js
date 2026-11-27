@@ -134,7 +134,8 @@ export default tseslint.config(
         },
         {
           name: 'sessionStorage',
-          message: 'Only src/lib/api.ts may keep the web refresh token (S1).',
+          message:
+            'The web refresh token is kept only by @istigaba/web-ui/auth (token-storage.ts, CLAUDE.md §9).',
         },
       ],
       'no-restricted-syntax': [
@@ -164,13 +165,33 @@ export default tseslint.config(
       'no-restricted-globals': ['error', { name: 'fetch', message: 'Use @istigaba/api-client.' }],
     },
   },
+  // packages/web-ui: browser storage only through its two owners (S1). theme/storage.ts keeps the
+  // theme/language preferences; auth/token-storage.ts keeps the refresh token. Nothing else.
   {
-    files: ['apps/web-*/src/lib/api.ts'],
+    files: [
+      'packages/web-ui/src/**/*.{ts,tsx}',
+      'tooling/eslint-fixtures/packages/web-ui/src/**/*.{ts,tsx}',
+    ],
+    ignores: ['**/web-ui/src/theme/storage.ts', '**/web-ui/src/auth/token-storage.ts'],
     rules: {
       'no-restricted-globals': [
         'error',
-        { name: 'fetch', message: 'Use @istigaba/api-client.' },
-        { name: 'localStorage', message: 'Tokens never go to localStorage (CLAUDE.md §9).' },
+        { name: 'fetch', message: 'Use @istigaba/api-client (CLAUDE.md §9).' },
+        { name: 'localStorage', message: 'Only theme/storage.ts persists preferences.' },
+        { name: 'sessionStorage', message: 'Only auth/token-storage.ts keeps the refresh token.' },
+      ],
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'window',
+          property: 'localStorage',
+          message: 'Only theme/storage.ts persists preferences.',
+        },
+        {
+          object: 'window',
+          property: 'sessionStorage',
+          message: 'Only auth/token-storage.ts keeps the refresh token.',
+        },
       ],
     },
   },

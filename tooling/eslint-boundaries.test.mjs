@@ -47,3 +47,24 @@ describe('S0 ESLint boundary and frontend rules', () => {
     expect(await ruleIds(file)).toEqual([]);
   });
 });
+
+describe('NFR-006 ESLint token storage rules (S1)', () => {
+  async function packageRuleIds(relativePath) {
+    const [result] = await eslint.lintFiles([
+      join(root, 'tooling/eslint-fixtures/packages/web-ui/src', relativePath),
+    ]);
+    return result.messages.map((m) => m.ruleId ?? `fatal: ${m.message}`);
+  }
+
+  it('NFR-006 an app touching sessionStorage is reported, even in src/lib/api.ts', async () => {
+    expect(await ruleIds('lib/api.ts')).toContain('no-restricted-globals');
+  });
+
+  it('NFR-006 web-ui code outside auth/token-storage.ts touching sessionStorage is reported', async () => {
+    expect(await packageRuleIds('auth/leak.ts')).toContain('no-restricted-properties');
+  });
+
+  it('NFR-006 web-ui auth/token-storage.ts may keep the refresh token', async () => {
+    expect(await packageRuleIds('auth/token-storage.ts')).toEqual([]);
+  });
+});
