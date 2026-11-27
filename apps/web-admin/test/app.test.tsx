@@ -5,8 +5,10 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../src/app/App';
 import { useLanguageStore } from '../src/stores/language.store';
 import { useThemeStore } from '../src/stores/theme.store';
+import { resetApp } from './helpers';
 
 beforeEach(() => {
+  resetApp('/');
   useLanguageStore.getState().setLanguage('ar');
   useThemeStore.getState().setPreference('system');
 });
@@ -18,7 +20,10 @@ describe('NFR-022 web-admin shell', () => {
     expect(
       await screen.findByRole('heading', { name: resources.ar.apps.admin }),
     ).toBeInTheDocument();
-    expect(screen.getByText(resources.ar.common.foundationReady)).toBeInTheDocument();
+    // S1: signed out, the shell shows the login page.
+    expect(
+      await screen.findByRole('heading', { name: resources.ar.auth.signInTitle }),
+    ).toBeInTheDocument();
     expect(document.documentElement.dir).toBe('rtl');
     expect(document.documentElement.lang).toBe('ar');
   });

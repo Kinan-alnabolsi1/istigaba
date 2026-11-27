@@ -1,6 +1,7 @@
 import { LanguageSwitcher, ThemeSwitcher } from '@istigaba/web-ui';
 import { useTranslation } from 'react-i18next';
 import { Outlet } from 'react-router';
+import { UserMenu } from '../../features/auth';
 import { useLanguageStore } from '../../stores/language.store';
 import { useThemeStore } from '../../stores/theme.store';
 
@@ -19,6 +20,7 @@ export function RootLayout() {
           <h1 className="text-base font-bold text-text-secondary">{t('apps:admin')}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <UserMenu />
           <ThemeSwitcher
             value={preference}
             onChange={setPreference}
