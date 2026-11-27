@@ -17,3 +17,31 @@ export function typeTests(client: ApiClient): void {
   // @ts-expect-error wrong path parameter name
   void client.request('get', '/me/reports/{reportId}', { path: { id: 'r' } });
 }
+
+// ── S1 (NFR-006) ────────────────────────────────────────────────────────────
+import type { ApiErrorCode, Operation, SuccessBody } from '../src';
+
+type IsNever<T> = [T] extends [never] ? true : false;
+
+// 204-only operations resolve to void, not never (code after `await` stays reachable).
+export const logoutIsNotNever: IsNever<SuccessBody<Operation<'/auth/logout', 'post'>>> = false;
+export const consentIsNotNever: IsNever<SuccessBody<Operation<'/me/location-consent', 'put'>>> =
+  false;
+export const locationIsNotNever: IsNever<SuccessBody<Operation<'/me/location', 'put'>>> = false;
+// 200 bodies are unchanged.
+export const loginHasBody: IsNever<SuccessBody<Operation<'/auth/login', 'post'>>> = false;
+
+// ApiErrorCode lists the S1 codes and rejects typos.
+export const s1Codes: ApiErrorCode[] = [
+  'invalid_credentials',
+  'account_locked',
+  'account_deactivated',
+  'email_taken',
+  'phone_taken',
+  'invalid_current_password',
+  'location_consent_required',
+  'network_error',
+  'unknown_error',
+];
+// @ts-expect-error not a known error code
+export const typo: ApiErrorCode = 'invalid_credential';

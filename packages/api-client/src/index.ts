@@ -1,6 +1,7 @@
-export { createApiClient } from './client';
+export { createApiClient, DEFAULT_NO_REFRESH_PATHS } from './client';
 export type { ApiClient, ApiClientOptions, Language, RequestOptions } from './client';
-export { ApiError, toApiError } from './errors';
+export { ApiError, isApiError, toApiError } from './errors';
+export type { ApiErrorCode } from './errors';
 export type {
   HttpMethod,
   MethodsOf,

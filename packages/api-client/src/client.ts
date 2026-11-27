@@ -31,6 +31,11 @@ export interface ApiClientOptions {
   getLanguage: () => Language;
   /** Path of the refresh operation; requests to it are never refreshed/retried. */
   refreshPath?: string;
+  /**
+   * Paths whose 401 is a final answer (never triggers a refresh), e.g. a wrong password on login.
+   * Defaults to the public auth operations and logout.
+   */
+  noRefreshPaths?: readonly string[];
   /** UUID v4 generator for Idempotency-Key. Defaults to `crypto.randomUUID`. */
   generateId?: () => string;
   timeoutMs?: number;
@@ -75,8 +80,16 @@ function fillPath(template: string, params: Record<string, unknown> | undefined)
   });
 }
 
+export const DEFAULT_NO_REFRESH_PATHS: readonly string[] = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh',
+  '/auth/logout',
+];
+
 export function createApiClient(options: ApiClientOptions): ApiClient {
   const refreshPath = options.refreshPath ?? '/auth/refresh';
+  const noRefreshPaths = [...(options.noRefreshPaths ?? DEFAULT_NO_REFRESH_PATHS), refreshPath];
   const generateId = options.generateId ?? defaultId;
   const http = axios.create({
     baseURL: options.baseURL,
@@ -96,15 +109,22 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
 
   // One refresh in flight at a time; concurrent 401s wait for it, then retry once.
   let refreshing: Promise<string> | null = null;
-  const isRefreshCall = (config: InternalAxiosRequestConfig | undefined): boolean =>
-    (config?.url ?? '').replace(/\?.*$/, '').endsWith(refreshPath);
+  const isNoRefreshCall = (config: InternalAxiosRequestConfig): boolean => {
+    const url = (config.url ?? '').replace(/\?.*$/, '');
+    return noRefreshPaths.some((p) => url.endsWith(p));
+  };
+  // Only a request that was sent with a token can have an expired token worth refreshing.
+  const carriedBearer = (config: InternalAxiosRequestConfig): boolean =>
+    AxiosHeaders.from(config.headers).has('Authorization');
 
   http.interceptors.response.use(undefined, async (error: unknown) => {
     const apiError = toApiError(error);
     const config = (axios.isAxiosError(error) ? error.config : undefined) as
       RetriableConfig | undefined;
 
-    if (apiError.status !== 401 || !config || isRefreshCall(config)) throw apiError;
+    if (apiError.status !== 401 || !config || isNoRefreshCall(config) || !carriedBearer(config)) {
+      throw apiError;
+    }
     if (config._istigabaRetried) {
       options.onSessionExpired?.();
       throw apiError;
@@ -115,7 +135,10 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
         refreshing = null;
       });
       await refreshing;
-    } catch {
+    } catch (refreshError: unknown) {
+      const reason = toApiError(refreshError);
+      // Offline is not a rejected session: keep the tokens and let the caller retry later.
+      if (reason.code === 'network_error') throw reason;
       options.onSessionExpired?.();
       throw apiError;
     }
@@ -141,7 +164,8 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
         params: o.query,
         data: o.body,
       });
-      return response.data as never;
+      // A 204 carries no body; browsers may surface it as '' so normalise to undefined.
+      return (response.status === 204 ? undefined : response.data) as never;
     },
     withIdempotencyKey(config, key) {
       const c = (config ?? {}) as AxiosRequestConfig;

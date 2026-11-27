@@ -30,9 +30,9 @@ export type RequestBody<O> = O extends { requestBody?: infer RB }
     : JsonContent<NonNullable<RB>>
   : undefined;
 
-/** Union of JSON bodies of the 2xx responses. */
+/** Union of JSON bodies of the 2xx responses; a 204 (no content) contributes `void`. */
 export type SuccessBody<O> = O extends { responses: infer R }
   ? {
-      [K in keyof R]: K extends 200 | 201 | 202 ? JsonContent<R[K]> : never;
+      [K in keyof R]: K extends 200 | 201 | 202 ? JsonContent<R[K]> : K extends 204 ? void : never;
     }[keyof R]
   : never;

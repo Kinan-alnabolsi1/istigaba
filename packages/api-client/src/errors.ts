@@ -1,6 +1,30 @@
 import { isAxiosError } from 'axios';
 
 /**
+ * Error codes the contract (openapi.yaml) and the client can produce. Frontends map them to
+ * localized messages; unknown server codes still arrive as plain strings on ApiError.code.
+ */
+export type ApiErrorCode =
+  | 'malformed_request'
+  | 'unauthenticated'
+  | 'forbidden'
+  | 'not_found'
+  | 'invalid_state_transition'
+  | 'validation_failed'
+  | 'rate_limited'
+  | 'internal_error'
+  | 'ai_component_unavailable'
+  | 'invalid_credentials'
+  | 'account_locked'
+  | 'account_deactivated'
+  | 'email_taken'
+  | 'phone_taken'
+  | 'invalid_current_password'
+  | 'location_consent_required'
+  | 'network_error'
+  | 'unknown_error';
+
+/**
  * Normalised API error: every frontend handles this one shape.
  * Mirrors the contract error body `{code, message, request_id}` (+ `errors` on 422).
  */
@@ -27,6 +51,11 @@ export class ApiError extends Error {
     this.errors = init.errors;
     this.retryAfterSeconds = init.retryAfterSeconds;
   }
+}
+
+/** True for errors produced by this client (always normalised). */
+export function isApiError(value: unknown): value is ApiError {
+  return value instanceof ApiError;
 }
 
 interface ContractErrorBody {
