@@ -866,7 +866,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/DuplicateAccount"
         "422":
           $ref: "#/components/responses/ValidationFailed"
         "500":
@@ -957,7 +957,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/DuplicateAccount"
         "422":
           $ref: "#/components/responses/ValidationFailed"
         "500":
@@ -1059,6 +1059,8 @@ paths:
       description: |-
         Verifies credentials of any role and issues an access token plus a refresh token (a `refresh_tokens` row stores only the token hash). Deactivated accounts (`is_active = false`) cannot log in. The error never reveals whether the email exists.
 
+        Wrong credentials return 401 `invalid_credentials`; a deactivated account returns 403 `account_deactivated` only after the password verifies; failed attempts are throttled (429).
+
         **Authorization**
         - Public (no authentication).
       x-fr:
@@ -1086,10 +1088,14 @@ paths:
                 $ref: "#/components/schemas/TokenPair"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/InvalidCredentials"
+        "403":
+          $ref: "#/components/responses/AccountDeactivated"
         "422":
           $ref: "#/components/responses/ValidationFailed"
         "429":
-          $ref: "#/components/responses/TooManyRequests"
+          $ref: "#/components/responses/LoginThrottled"
         "500":
           $ref: "#/components/responses/InternalError"
       security: []
@@ -1100,7 +1106,7 @@ paths:
       operationId: logout
       summary: "[FR-003] Log out and invalidate the session"
       description: |-
-        Sets `refresh_tokens.revoked_at` for the supplied token so it can never be used again. The current access token is rejected immediately only if the optional denylist (D-05) is adopted; otherwise it expires at its short TTL.
+        Sets `refresh_tokens.revoked_at` for the supplied token so it can never be used again, and adds the current access token's `jti` to a denylist until it expires, so it is rejected immediately (D-05). Unknown, foreign or already revoked tokens still return 204.
 
         **Authorization**
         - Authentication required (Bearer JWT).
@@ -1173,6 +1179,8 @@ paths:
                 $ref: "#/components/schemas/TokenPair"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "422":
           $ref: "#/components/responses/ValidationFailed"
         "429":
@@ -1227,7 +1235,7 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/DuplicateAccount"
         "422":
           $ref: "#/components/responses/ValidationFailed"
         "429":
@@ -1814,7 +1822,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/DuplicateAccount"
         "422":
           $ref: "#/components/responses/ValidationFailed"
         "429":
@@ -2245,7 +2253,7 @@ paths:
       operationId: updateMyLocationConsent
       summary: "[FR-027] Grant or revoke location consent"
       description: |-
-        Sets `users.location_consent`. When revoked, the backend SHOULD clear `last_known_location` (D-15). A user without consent never receives a geographic alert.
+        Sets `users.location_consent`. When revoked, the backend clears `last_known_location` and `location_updated_at` (D-15). A user without consent never receives a geographic alert.
 
         **Authorization**
         - Authentication required (Bearer JWT).
@@ -4294,6 +4302,73 @@ components:
             code: rate_limited
             message: Too many requests.
             request_id: req_01
+    InvalidCredentials:
+      description: |
+        401 - The email or password is wrong. The body is identical for an unknown email and a wrong
+        password, so it never reveals whether an account exists.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: invalid_credentials
+            message: The email or password is incorrect.
+            request_id: req_01
+    AccountDeactivated:
+      description: |
+        403 - The credentials are correct but the account is deactivated (`users.is_active = false`).
+        Returned only after the password has been verified.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: account_deactivated
+            message: This account is deactivated.
+            request_id: req_01
+    LoginThrottled:
+      description: |
+        429 - Either the request rate limit was exceeded (`rate_limited`, NFR-011) or sign-in is locked
+        after 5 failed attempts within 15 minutes (`account_locked`). The lock applies separately to the
+        submitted email (whether or not it is registered) and to the client IP, and lasts 15 minutes.
+        A correct password does not lift an active lock.
+      headers:
+        Retry-After:
+          $ref: "#/components/headers/RetryAfter"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            rate_limited:
+              value:
+                code: rate_limited
+                message: Too many requests.
+                request_id: req_01
+            account_locked:
+              value:
+                code: account_locked
+                message: Too many failed sign-in attempts. Try again later.
+                request_id: req_01
+    DuplicateAccount:
+      description: |
+        409 - The email (`email_taken`) or phone (`phone_taken`) already belongs to another account.
+        Email is checked first.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            email_taken:
+              value:
+                code: email_taken
+                message: This email is already registered.
+                request_id: req_01
+            phone_taken:
+              value:
+                code: phone_taken
+                message: This phone number is already registered.
+                request_id: req_01
     InternalError:
       description:
         500 - Unexpected server error. No internal details are disclosed. All multi-table operations are rolled
@@ -4574,6 +4649,8 @@ components:
         phone:
           type: string
           maxLength: 30
+          pattern: '^\+[1-9][0-9]{7,14}$'
+          description: E.164 international format, e.g. +963933123456.
         password:
           type: string
           format: password
@@ -4771,7 +4848,8 @@ components:
             - string
             - "null"
           maxLength: 30
-          description: Optional for staff accounts (nullable in the ERD).
+          pattern: '^\+[1-9][0-9]{7,14}$'
+          description: E.164 international format, e.g. +963933123456. Optional for staff accounts (nullable in the ERD).
         password:
           type: string
           format: password
@@ -4801,6 +4879,8 @@ components:
             - string
             - "null"
           maxLength: 30
+          pattern: '^\+[1-9][0-9]{7,14}$'
+          description: E.164 international format, e.g. +963933123456.
     UpdateProfileRequest:
       type: object
       minProperties: 1
@@ -4818,6 +4898,8 @@ components:
             - string
             - "null"
           maxLength: 30
+          pattern: '^\+[1-9][0-9]{7,14}$'
+          description: E.164 international format, e.g. +963933123456.
     ChangePasswordRequest:
       type: object
       required:

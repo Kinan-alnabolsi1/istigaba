@@ -459,6 +459,8 @@ export interface paths {
          * [FR-002] Log in (any role)
          * @description Verifies credentials of any role and issues an access token plus a refresh token (a `refresh_tokens` row stores only the token hash). Deactivated accounts (`is_active = false`) cannot log in. The error never reveals whether the email exists.
          *
+         *     Wrong credentials return 401 `invalid_credentials`; a deactivated account returns 403 `account_deactivated` only after the password verifies; failed attempts are throttled (429).
+         *
          *     **Authorization**
          *     - Public (no authentication).
          */
@@ -480,7 +482,7 @@ export interface paths {
         put?: never;
         /**
          * [FR-003] Log out and invalidate the session
-         * @description Sets `refresh_tokens.revoked_at` for the supplied token so it can never be used again. The current access token is rejected immediately only if the optional denylist (D-05) is adopted; otherwise it expires at its short TTL.
+         * @description Sets `refresh_tokens.revoked_at` for the supplied token so it can never be used again, and adds the current access token's `jti` to a denylist until it expires, so it is rejected immediately (D-05). Unknown, foreign or already revoked tokens still return 204.
          *
          *     **Authorization**
          *     - Authentication required (Bearer JWT).
@@ -1011,7 +1013,7 @@ export interface paths {
         get?: never;
         /**
          * [FR-027] Grant or revoke location consent
-         * @description Sets `users.location_consent`. When revoked, the backend SHOULD clear `last_known_location` (D-15). A user without consent never receives a geographic alert.
+         * @description Sets `users.location_consent`. When revoked, the backend clears `last_known_location` and `location_updated_at` (D-15). A user without consent never receives a geographic alert.
          *
          *     **Authorization**
          *     - Authentication required (Bearer JWT).
@@ -1876,6 +1878,7 @@ export interface components {
             full_name: string;
             /** Format: email */
             email: string;
+            /** @description E.164 international format, e.g. +963933123456. */
             phone: string;
             /**
              * Format: password
@@ -1956,7 +1959,7 @@ export interface components {
             full_name: string;
             /** Format: email */
             email: string;
-            /** @description Optional for staff accounts (nullable in the ERD). */
+            /** @description E.164 international format, e.g. +963933123456. Optional for staff accounts (nullable in the ERD). */
             phone?: string | null;
             /**
              * Format: password
@@ -1971,12 +1974,14 @@ export interface components {
             full_name?: string;
             /** Format: email */
             email?: string;
+            /** @description E.164 international format, e.g. +963933123456. */
             phone?: string | null;
         };
         UpdateProfileRequest: {
             full_name?: string;
             /** Format: email */
             email?: string;
+            /** @description E.164 international format, e.g. +963933123456. */
             phone?: string | null;
         };
         ChangePasswordRequest: {
@@ -2652,6 +2657,71 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
+        /**
+         * @description 401 - The email or password is wrong. The body is identical for an unknown email and a wrong
+         *     password, so it never reveals whether an account exists.
+         */
+        InvalidCredentials: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "code": "invalid_credentials",
+                 *       "message": "The email or password is incorrect.",
+                 *       "request_id": "req_01"
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /**
+         * @description 403 - The credentials are correct but the account is deactivated (`users.is_active = false`).
+         *     Returned only after the password has been verified.
+         */
+        AccountDeactivated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "code": "account_deactivated",
+                 *       "message": "This account is deactivated.",
+                 *       "request_id": "req_01"
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /**
+         * @description 429 - Either the request rate limit was exceeded (`rate_limited`, NFR-011) or sign-in is locked
+         *     after 5 failed attempts within 15 minutes (`account_locked`). The lock applies separately to the
+         *     submitted email (whether or not it is registered) and to the client IP, and lasts 15 minutes.
+         *     A correct password does not lift an active lock.
+         */
+        LoginThrottled: {
+            headers: {
+                "Retry-After": components["headers"]["RetryAfter"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /**
+         * @description 409 - The email (`email_taken`) or phone (`phone_taken`) already belongs to another account.
+         *     Email is checked first.
+         */
+        DuplicateAccount: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description 500 - Unexpected server error. No internal details are disclosed. All multi-table operations are rolled back. */
         InternalError: {
             headers: {
@@ -3163,7 +3233,7 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
-            409: components["responses"]["Conflict"];
+            409: components["responses"]["DuplicateAccount"];
             422: components["responses"]["ValidationFailed"];
             500: components["responses"]["InternalError"];
         };
@@ -3222,7 +3292,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
+            409: components["responses"]["DuplicateAccount"];
             422: components["responses"]["ValidationFailed"];
             500: components["responses"]["InternalError"];
         };
@@ -3304,8 +3374,10 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["InvalidCredentials"];
+            403: components["responses"]["AccountDeactivated"];
             422: components["responses"]["ValidationFailed"];
-            429: components["responses"]["TooManyRequests"];
+            429: components["responses"]["LoginThrottled"];
             500: components["responses"]["InternalError"];
         };
     };
@@ -3359,6 +3431,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
             500: components["responses"]["InternalError"];
@@ -3401,7 +3474,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
-            409: components["responses"]["Conflict"];
+            409: components["responses"]["DuplicateAccount"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
             500: components["responses"]["InternalError"];
@@ -3730,7 +3803,7 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
-            409: components["responses"]["Conflict"];
+            409: components["responses"]["DuplicateAccount"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
             500: components["responses"]["InternalError"];
