@@ -70,4 +70,18 @@ describe('NFR-022 i18n resources', () => {
     ];
     for (const code of s1Codes) expect(isKnownErrorCode(code)).toBe(true);
   });
+
+  it('NFR-022 FR-002 the S1 web namespaces exist in both languages', () => {
+    for (const lang of ['ar', 'en'] as const) {
+      const r = resources[lang] as Record<string, unknown>;
+      for (const ns of ['auth', 'profile', 'password', 'validation']) {
+        expect(r[ns], `${lang}.${ns}`).toBeTypeOf('object');
+      }
+    }
+    // Arabic needs all six CLDR plural forms for the lockout countdown.
+    const ar = resources.ar as unknown as { auth: Record<string, string> };
+    for (const form of ['zero', 'one', 'two', 'few', 'many', 'other']) {
+      expect(ar.auth[`lockedMinutes_${form}`]).toContain('{{count}}');
+    }
+  });
 });
