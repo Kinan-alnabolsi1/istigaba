@@ -74,3 +74,4 @@ desktop.ini
 *.log
 npm-debug.log*
 pnpm-debug.log*
+CLAUDE.local.md

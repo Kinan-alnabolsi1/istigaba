@@ -37,7 +37,7 @@ docs/                 srs, erd, api, plans, progress
 - Tooling: pnpm workspaces (JS), Composer (PHP), Python venv + `pyproject.toml` + pip-tools lock. Root scripts: `pnpm dev:web-ops`, `pnpm dev:web-admin`, `pnpm test`, `pnpm lint`, `pnpm typecheck`.
 - Python for `ai-service` is pinned to 3.13. Node Active LTS and pnpm are pinned at the start of S0; `laravel-eloquent-spatial` is verified against PostgreSQL 18 + PostGIS 3.7 in S0. Expo stays on SDK 57.
 - Toolchain versions are pinned in `.tool-versions`/`.nvmrc`, `composer.json`, `pyproject.toml` and lockfiles (not in this file). Do not bump majors without asking.
-- Work happens across all folders; no per-person ownership. Read the nested CLAUDE.md of the app you touch.
+- Ownership is split into Track A and Track B (see §12). Read the nested CLAUDE.md of the app you touch.
 - Local dev: native Windows, **no Docker**. Shell is Git Bash (PowerShell only for one-time setup scripts). LF line endings (`.gitattributes`, `.editorconfig`).
   Native PostgreSQL + PostGIS, `database` queue/cache driver, local disk, `log` mail, `php artisan reverb:start`, uvicorn from venv.
 - Production target: Linux VPS, HTTPS/wss only, Nginx or Caddy, process manager for `queue:work`/`reverb:start`/scheduler/uvicorn, Redis for queue/cache. Local `database` driver is dev-only. Two environments only: local and production.
@@ -143,3 +143,21 @@ Rate-limit table: `apps/api/CLAUDE.md` §Rate limits. Seed data: `docs/seed-prop
 ## 11. Observability
 
 Laravel JSON daily logs with `request_id` (also returned in error bodies); central redaction; no Sentry; `GET /health` returns status only; Telescope in local only.
+
+## 12. Parallel work on main (shared-repo sync rules)
+
+Two developers commit directly to `main` in parallel:
+- **Track A:** `apps/api`, `apps/ai-service`, `apps/web-ops`, `apps/web-admin`, `packages/web-ui`
+- **Track B:** `apps/mobile-citizen`, `apps/mobile-field`, `packages/ui`, `packages/mobile-auth`
+
+Check `CLAUDE.local.md` for which track this machine owns. If `CLAUDE.local.md` is missing, ask the developer which track they are working on before editing files.
+
+Follow these rules in every session:
+1. **Sync before pushing:** Always run `git pull --rebase origin main` before any `git push origin main` (and at the start of a session). Never run `git push --force` or `--force-with-lease` on `main`.
+2. **Stay strictly within your track:** Never edit, reformat, or revert files belonging to the other track.
+3. **High-conflict shared files (`pnpm-lock.yaml`, `packages/i18n/*`, `eslint.config.js`, `docs/progress.md`):**
+   - `pnpm-lock.yaml`: never hand-edit or manually resolve conflicts; if a rebase conflicts, take one side and regenerate with `pnpm install`.
+   - `packages/i18n/*`: only append new keys under your feature namespace; never reorder or reformat existing keys.
+   - `docs/progress.md`: append new entries only; do not rewrite earlier sections.
+   - Plans: keep parallel slice plans in separate files (e.g. `docs/plans/S1.md` vs `docs/plans/S1-mobile.md`).
+4. **Re-verify after rebase:** If `git pull --rebase` brings in changes to any `packages/*`, `pnpm-lock.yaml`, or `eslint.config.js`, re-run the relevant local checks (`typecheck`, `lint`, tests) before pushing.
