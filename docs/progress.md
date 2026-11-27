@@ -71,3 +71,61 @@
 | 2026-11-26 | GitHub Actions run 45719398255 (`c8cff40`) | JS, API (incl. schema drift on `postgis/postgis:18-3.7`) and AI green; secret scan flagged the dummy ai-service test key |
 | 2026-11-26 | gitleaks 8.30.1 locally (checksum-verified) | Finding located and reviewed: test key in `apps/ai-service/tests/conftest.py` (not a secret). Tests now generate the key at runtime; historical fingerprint in `.gitleaksignore`. History and tree: no leaks |
 | 2026-11-26 | GitHub Actions run 45720158785 (`b7442ed`) | **All 4 jobs green** (Secret scan, JS, API, AI): https://github.com/Kinan-alnabolsi1/istigaba/actions/runs/45720158785 |
+
+---
+
+# S1 Identity (FR-001..FR-004), Track A — 2026-11-27
+
+**Status: complete on Track A** (plan `docs/plans/S1.md`, approved with Q1–Q7). Pushed at Checkpoint 1 (`0c44255`) and Checkpoint 2 (`31a8248`); Checkpoint 3 (web) committed locally, push pending owner confirmation.
+
+## Done (S1)
+
+- **Contract** (`a9c4941`, owner-approved §9): login 401 `invalid_credentials`, 403 `account_deactivated`, 429 `rate_limited|account_locked`; refresh 401; 409 `email_taken|phone_taken` on register/profile/createUser/updateUser; E.164 on every writable `phone`; logout and consent texts. `packages/api-types` regenerated in the same commit.
+- **api-client** (`2376951`): no refresh on public auth calls or token-less requests (`noRefreshPaths`), offline refresh keeps the session, 204 typed `void`, `isApiError`, `ApiErrorCode`.
+- **i18n**: S1 error codes (`0c44255`); `auth`, `profile`, `password`, `validation` namespaces with full Arabic plural forms (Checkpoint 3).
+- **api** (`4a37aa5`, `31a8248`): jwt-auth 2.10.0; register (Citizen only), login (any role), refresh rotation with reuse detection, logout `jti` denylist, lockout (5 failures / 15 min per email and per IP, audited without PII), `/me`, profile, password (revokes all sessions), location consent (D-15) and `PUT /me/location`, `role`/`permission` middleware (also rejects deactivated users), admin roles/permissions API (audited), RBAC seeders (20 D-34 codes = contract) and first admin from env, Argon2id, named rate limiters, ar/en validation messages, minimal append-only Audit writer.
+- **web** (Checkpoint 3): `@istigaba/web-ui` primitives (Input, Label, Card, Alert, TextField, PasswordField), `@istigaba/web-ui/auth` (session factory: access token in memory, refresh token in `sessionStorage`, single-flight refresh/bootstrap, reject-and-log-out on a role mismatch; Login/Profile/ChangePassword forms with RHF + Zod). web-ops (Dispatcher) and web-admin (System Administrator): `/login`, guarded routes, `/profile`, `/profile/password`, header account menu. ESLint: `sessionStorage` banned in apps; inside web-ui only `auth/token-storage.ts` (refresh token) and `theme/storage.ts` (preferences) touch storage.
+- `docs/traceability/implemented.json`: S1 = FR-001..004, NFR-006, NFR-007, NFR-010, NFR-011. FR-027 is only partly done (consent + location write) and is not declared.
+
+## Next
+
+- Push Checkpoint 3 and tell Track B (shared `@istigaba/web-ui` is web-only; i18n namespaces added).
+- S2 Administration (FR-034..036): write `docs/plans/S2.md` for approval. The web-admin role/permission editor UI belongs there (S1 shipped the API only).
+
+## Blockers
+
+- None for code. Still pending from S0: owner approval for `migrate:fresh` on the local **dev** DB `istigaba`. After it: set `JWT_SECRET` (`php artisan jwt:secret`) and `ADMIN_*` in `apps/api/.env`, then `php artisan db:seed`.
+
+## Open decisions
+
+- **Q8**: `PUT /me/location` enforces 10/min but the contract lists no 429 for it (`CLAUDE.md` §10: ask before adding). The 429 test checks the envelope only.
+- Reuse detection: a duplicated browser tab (copied `sessionStorage`) or a lost refresh response makes the next refresh look like reuse and signs that user out everywhere (safe; documented in S1.md R1).
+
+## Deviations from the S1 plan
+
+- Route-authorization test lives in `tests/Feature/Security` (needs the booted app; the Architecture suite runs without it).
+- Architecture rule "DB facade only in Actions/Queries/Support" now also allows `Database\Seeders` and `Database\Factories`.
+- `IdentitySeeder` grants role → permission pairs only for codes it creates, so a re-seed never re-grants a pair an admin removed (the plan said "insert missing pairs", which would have undone audited admin changes).
+- The login/profile/password forms live in `@istigaba/web-ui/auth` (shared by both consoles) instead of being duplicated per app; each app keeps routing and data wiring. `@hookform/resolvers` pinned to 7.0.6 (newest ≥ 2 weeks old) in the pnpm catalog; `axios-mock-adapter` moved into the catalog.
+- No `UserPolicy`: `/me*` always acts on the token's own user, so the policy would have no decision to make. `RolePolicy` guards `replaceRolePermissions` behind the middleware.
+
+## Bugs found and fixed during S1
+
+- jwt-auth `show_black_list_exception=false` silently disables the blacklist check itself (not just the message): kept `true`.
+- PostgreSQL session timezone was the server's local offset while the app is UTC: naive timestamps were stored 3 h off. `config/database.php` pins `timezone = UTC`.
+- React StrictMode ran the session bootstrap twice, presenting the same refresh token twice, which the API (correctly) treated as reuse and revoked every session. Bootstrap and the session's refresh are now single-flight (test added first).
+
+## Verification log (S1)
+
+| Date | Command | Result |
+|---|---|---|
+| 2026-11-27 | `composer test` (apps/api) | 220/220 (S1 suites red first, then green) |
+| 2026-11-27 | `composer lint -- --test`, `composer analyse` | Pint ok; Larastan level 6: 0 errors |
+| 2026-11-27 | Bite checks | Seeder map mutation → 2 red; route test with a missing `permission:` / `throttle:` → red; web role-gate mutation → red |
+| 2026-11-27 | curl smoke vs `php -S` (test DB) | register 201/409/422, login 401/200, `/me` 200, admin 403/200, rotation, reuse → family revoked, logout → access token 401, lockout 429 `Retry-After: 899` |
+| 2026-11-27 | `pnpm schema:drift`, `pnpm openapi:lint`, `pnpm api-types:check`, `pnpm traceability` | No drift; valid (18 known warnings); current; S1 IDs covered |
+| 2026-11-27 | `pnpm lint`, `pnpm typecheck`, `pnpm test` | Clean; api-client 27, i18n 7, web-ui 54, web-ops 14, web-admin 14, mobile 5+5, root 40 |
+| 2026-11-27 | Web builds, `pnpm audit --audit-level high` | Both build; audit unchanged (2 moderate, 1 ignored high) |
+| 2026-11-27 | Browser vs real API (web-ops on :5183, web-admin on :5174) | Wrong password → localized 401, no refresh; Citizen in web-ops / Dispatcher in web-admin → rejected and `logout` 204; login → name in header; reload → exactly one refresh; profile 409 on field; password change → new pair; sign out → old refresh token 401; ar/RTL + en/LTR, Light + Dark; storage: `istigaba-theme`/`istigaba-lang` in localStorage, only `istigaba-refresh` in sessionStorage |
+| 2026-11-27 | GitHub Actions run 46019755161 (`0c44255`) | All 4 jobs green |
+| 2026-11-27 | GitHub Actions run 46025221169 (`31a8248`) | All 4 jobs green |

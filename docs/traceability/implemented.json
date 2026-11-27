@@ -1,6 +1,7 @@
 {
   "$comment": "FR/NFR IDs declared implemented, per slice. The traceability check fails if any of them has no test naming it. Add a slice's IDs when it is completed.",
   "slices": {
-    "S0": ["NFR-008", "NFR-012", "NFR-014", "NFR-021", "NFR-022"]
+    "S0": ["NFR-008", "NFR-012", "NFR-014", "NFR-021", "NFR-022"],
+    "S1": ["FR-001", "FR-002", "FR-003", "FR-004", "NFR-006", "NFR-007", "NFR-010", "NFR-011"]
   }
 }
